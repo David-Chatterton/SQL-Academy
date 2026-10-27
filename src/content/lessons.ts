@@ -1,4 +1,5 @@
 import type { Lesson } from '../types';
+import { module2Lessons } from './module2';
 type Content = Omit<Lesson, 'id' | 'module' | 'prerequisites' | 'terminal' | 'completionCriteria'>;
 const content: Content[] = [
   {
@@ -102,12 +103,17 @@ const content: Content[] = [
     hints: ['Write SELECT with the five requested column names and FROM transactions.', 'Use amount < -1000. Exclude Housing and Transfers with two <> comparisons joined by AND, or NOT IN.', 'Finish with ORDER BY amount ASC, id ASC. You need all matches, so do not add LIMIT.'], expected: { ordered: true },
   },
 ];
-export const lessons: Lesson[] = content.map((item, index) => ({
+const module1Lessons: Lesson[] = content.map((item, index) => ({
   ...item, id: `m1-${index + 1}`, module: 1, prerequisites: index ? [`m1-${index}`] : [],
   terminal: `Open your seeded database with duckdb academy.duckdb, then run the same query for “${item.title}”. End the SQL statement with a semicolon.`,
   completionCriteria: 'Run a query whose actual values, columns and required order match the reference; use any specified lesson technique.',
 }));
+export const modules = [
+  { id: 1, title: 'SQL fundamentals', lessons: module1Lessons },
+  { id: 2, title: 'Aggregation and financial analysis', lessons: module2Lessons },
+];
+export const lessons: Lesson[] = modules.flatMap(module => module.lessons);
 export const plannedModules = [
-  'Aggregation and financial analysis', 'Relational data', 'Importing and cleaning data',
+  'Relational data', 'Importing and cleaning data',
   'Database management', 'Advanced analytical SQL', 'DuckDB CLI and Python', 'Accounting laboratory',
 ];

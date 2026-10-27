@@ -1,6 +1,6 @@
 # DuckDB Academy v0.1
 
-A local, browser-based SQL learning application for an Excel-experienced beginner. Module 1 contains eight lessons using fictional financial data. Modules 2–8 are a clearly labelled roadmap.
+A local, browser-based SQL learning application for an Excel-experienced beginner. Modules 1 and 2 contain sixteen lessons using fictional financial data: SQL fundamentals, then aggregation and financial analysis. Modules 3–8 are a clearly labelled roadmap.
 
 ## Run locally
 
@@ -31,9 +31,9 @@ npm run preview
 
 ## What is implemented
 
-- Eight structured Module 1 lessons with objectives, beginner explanations, Excel equivalents, syntax breakdowns, tasks, editable queries, hints, solutions and solution explanations.
+- Sixteen structured lessons across Modules 1 and 2 with objectives, beginner explanations, Excel equivalents, syntax breakdowns, tasks, editable queries, hints, solutions and solution explanations.
 - DuckDB-Wasm running in a worker, seeded on initialisation, with real results and SQL errors, cancellation on reset, initialisation/query timeouts and resource disposal.
-- Module 1 SELECT-only workflow, external access disabled, configuration locked and learner transactions rolled back.
+- SELECT-only workflow, external access disabled, configuration locked and learner transactions rolled back.
 - Monaco SQL editor, plain-text accessible alternative, Run Query, Ctrl/Command+Enter, copy and reset controls, paginated results with column types.
 - Interactive teaching samples for column selection, row filtering, ranges, AND/OR, sorting and unique values. Samples are explicitly distinguished from actual query results.
 - Guided terminal simulation plus native CachyOS instructions and an identical downloadable SQL seed.
@@ -71,17 +71,15 @@ Use a fresh database. The seed is wrapped in a transaction and intentionally doe
 
 ## Add lessons
 
-Add a lesson object to `src/content/lessons.ts` conforming to `Lesson` in `src/types.ts`. Define the objectives, explanation, visual type, task, starter, reference solution, hints, expected ordering and any required technique. The reference query executes against the same actual database to establish expected results. Add acceptance and rejection cases and extend browser coverage. Module 1 currently assumes eight lessons in its navigation/reporting; see ARCHITECTURE.md for changes needed when adding later modules.
+Add a lesson object to `src/content/lessons.ts` conforming to `Lesson` in `src/types.ts`. Define the objectives, explanation, visual type, task, starter, reference solution, hints, expected ordering and any required technique. The reference query executes against the same actual database to establish expected results. Add acceptance and rejection cases and extend browser coverage. The module registry in `src/content/lessons.ts` drives navigation and reporting; Module 2 content lives in `src/content/module2.ts`. Add future modules to that registry.
 
 ## Verification status in the implementation environment
 
-- **Passed on the installed dependency tree:** strict TypeScript checking and the Vite production build; ESLint; 30 tests across six Vitest files; and the core smoke check. The 11 real WASM integration tests execute all eight reference lessons and alternative answers, check exact decimal/date decoding, reject incorrect boundaries, recover after errors, and reset/reseed from the native SQL download. The installed engine identifies itself as DuckDB v1.4.3.
-- **Updated test tooling verified:** build, lint and all 30 tests also pass with installed Vitest 4.1.11 and ESLint 10.12.0. A fresh `npm audit` result is still needed; no clean audit is claimed.
-- **Browser QA:** the laptop Chromium run passed four of five tests, including all eight reference solutions, persistence, alternate queries, terminal simulation, downloads and responsive navigation. The remaining test used an ambiguous alert locator that also matched Monaco accessibility alerts. The query error now has an accessible name and the test targets that name. Rerun `npm run test:e2e` on the laptop to verify the fix. The sandbox still cannot start Vite (`listen EPERM 127.0.0.1:5173`).
-- **esbuild is working:** the production build passed despite npm's pending-install-script warning. No install-script approval was needed for that build.
-- **Git remains blocked:** the supplied `.git` directory is protected/read-only and not a valid repository. No Git metadata was removed or replaced; no commit or remote change was made.
-- No deployment was requested or performed. The user-generated package-lock.json is preserved and the updated tooling is installed.
+Verified on 25 October 2026 with the installed dependency tree:
 
-The application source and real SQL engine have passed the checks above. The final browser test rerun and fresh dependency audit remain outstanding before calling v0.1 fully verified.
+- Core smoke check, ESLint, TypeScript and Vite production build passed.
+- All 45 Vitest tests across six files passed, including real DuckDB-Wasm execution of both modules, independent aggregate calculations, incorrect-answer rejection, progress compatibility and native-seed parity.
+- All six Chromium Playwright tests passed, including all 16 reference solutions, completion persistence, module transitions, optional syntax, editor reset, terminal and visual practice, and mobile navigation. Desktop and mobile screenshots were inspected in both light and dark themes.
+- The build still reports a large JavaScript chunk warning. No fresh dependency audit or deployment was performed.
 
-The targeted tooling updates were selected from locally cached npm registry metadata. Relevant advisories: [Vitest mocker path traversal](https://github.com/advisories/GHSA-82fw-gwwq-j7x9), [tinypool worker options](https://github.com/advisories/GHSA-5gmw-xhrv-c9v3), [tinypool run options](https://github.com/advisories/GHSA-85c8-ppgw-ccpr). This project uses those packages for development tests; they are not dependencies of the production application.
+The simulated terminal never executes host shell commands. Native-seed parity is checked with the same DuckDB-Wasm engine; this does not replace testing a separately installed native CLI version.

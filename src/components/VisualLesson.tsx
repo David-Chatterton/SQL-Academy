@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AggregateVisual } from './AggregateVisual';
 import { generateTransactions, money, type Transaction } from '../data/finance';
 import type { Lesson } from '../types';
 const all = generateTransactions();
@@ -13,6 +14,7 @@ export function VisualLesson({ lesson, onRun, disabled }: { lesson: Lesson; onRu
   const [threshold, setThreshold] = useState(30);
   const [ascending, setAscending] = useState(true);
   const [showMatches, setShowMatches] = useState(false);
+  if (lesson.visual === 'aggregate') return <AggregateVisual lesson={lesson} onRun={onRun} disabled={disabled}/>;
   const kind = lesson.visual;
   const isProjection = kind === 'projection', isSort = kind === 'sort', isDistinct = kind === 'distinct';
   const filtering = ['filter', 'range', 'logic', 'investigate'].includes(kind);

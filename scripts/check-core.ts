@@ -16,7 +16,7 @@ for (let id = 1; id <= 48; id++) {
 assert.equal(rows.filter(r => r.pence < -100000 && r.category !== 'Housing' && r.category !== 'Transfers').length, 3);
 assert(rows.some(r => r.category === null)); assert(rows.some(r => r.duplicateOf !== null));
 assert.equal(money(-1), '-0.01'); assert(nativeSeedSQL().includes('DECIMAL(12,2)'));
-assert.equal(lessons.length, 8);
+assert.equal(lessons.length, 16);
 for (const lesson of lessons) {
   assertReadOnly(lesson.solution); assert.equal(lesson.hints.length, 3); assert(lesson.objectives.length);
   assert(lesson.explanation.length); assert(lesson.terminal); assert(lesson.solutionWhy);

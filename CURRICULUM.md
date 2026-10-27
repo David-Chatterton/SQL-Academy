@@ -19,9 +19,24 @@ Each lesson defines prerequisites, objectives, plain-English explanations, Excel
 
 A strictly exceeding boundary excludes equality. Range endpoints in lesson 4 are included. Lesson 6 excludes missing categories as well as Transfers; this is stated explicitly. Lesson 7 includes a single NULL entry. Lesson 8 includes three controlled unusual purchases and does not use LIMIT. The fictional activity volume supports varied exercises; anomalous spending is an investigation signal, not evidence of wrongdoing.
 
-## Planned modules — no active lesson links
+## Module 2 — implemented in source
 
-2. **Aggregation and financial analysis:** SUM, COUNT, AVG, MIN, MAX, GROUP BY, HAVING, CASE.
+| Lesson | Task | Key teaching point |
+| --- | --- | --- |
+| 1. COUNT | Count all, classified and missing category rows | COUNT(*) versus COUNT(column), NULL, AS |
+| 2. SUM | Positive total grocery spending | WHERE before aggregation, signed amounts, empty sums |
+| 3. AVG, MIN and MAX | Average, smallest and largest grocery purchase | Positive input sizes, rounding the final average |
+| 4. GROUP BY | Count and total spending per category | Report grain, NULL group, transfer exclusion |
+| 5. Multiple grouping keys | Ten largest account–category totals | Group before ranking and limiting; stable ties |
+| 6. HAVING | Categories spending above £20,000 | Group thresholds versus row filters |
+| 7. CASE | Account inflows, outflows and net movement | Conditional aggregation, transfer exclusion, net is not balance |
+| 8. Independent report | 2025 category spending with count and value thresholds | Date boundaries, inclusive count and strict total, average and order |
+
+All eight lessons include optional syntax, three hints, reference solutions, terminal practice and actual-result validation. The aggregate Visual tab uses six labelled seeded boundary records with interactive row and group thresholds; its optional SQL runs against the full database. The sidebar tracks each module and overall progress across 16 lessons. Existing version 1 progress remains valid because Module 1 IDs and the storage format are unchanged.
+
+SQL reference: [DuckDB aggregate functions](https://duckdb.org/docs/stable/sql/functions/aggregates) for COUNT, SUM, AVG, MIN, MAX and NULL handling. Queries are also executed against the installed DuckDB-Wasm version in integration tests.
+
+## Planned modules — no active lesson links
 3. **Relational data:** keys, relationships, INNER/LEFT JOIN, NULL and referential integrity.
 4. **Importing and cleaning data:** CSV, Parquet, types, casting, dates, text, duplicates, standardisation.
 5. **Database management:** CREATE TABLE, INSERT, UPDATE, DELETE, views, constraints, transactions.

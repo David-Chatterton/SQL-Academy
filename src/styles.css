@@ -586,6 +586,8 @@ main {
 }
 
 .excel-note {
+  min-width:0;
+  overflow-wrap:anywhere;
   padding:16px 18px;
   background:var(--accent-soft);
   border-left:3px solid var(--accent);
@@ -651,6 +653,25 @@ main {
   border:1px solid var(--line);
   border-radius:9px;
   overflow:hidden
+}
+
+:root:not([data-theme=dark]) .practice-panel {
+  border-color:#9aafb9;
+  box-shadow:0 4px 18px rgb(36 52 64 / 12%)
+}
+
+:root:not([data-theme=dark]) .practice-panel .tabs {
+  background:#e3edf0;
+  border-bottom-color:#9aafb9
+}
+
+:root:not([data-theme=dark]) .practice-panel .tabs button {
+  color:#415764
+}
+
+:root:not([data-theme=dark]) .practice-panel .tabs button[aria-selected=true] {
+  color:var(--accent);
+  background:var(--surface)
 }
 
 .tabs {

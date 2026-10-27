@@ -41,18 +41,18 @@ const forbidden = new Set('INSERT UPDATE DELETE CREATE DROP ALTER TRUNCATE COPY 
 const safeFunctions = new Set('ABS ROUND LOWER UPPER TRIM LENGTH COALESCE NULLIF CAST TRY_CAST COUNT SUM AVG MIN MAX'.split(' '));
 const groupingWords = new Set('SELECT WHERE AND OR NOT IN AS ON WHEN THEN ELSE FROM HAVING DISTINCT'.split(' '));
 export function assertReadOnly(sql: string): Token[] {
-  if (sql.length > 20000) throw new Error('Keep Module 1 queries under 20,000 characters.');
+  if (sql.length > 20000) throw new Error('Keep Academy queries under 20,000 characters.');
   const list = tokens(sql);
   if (list.at(-1)?.text === ';' && list.at(-1)?.kind === 'symbol') list.pop();
-  if (!list.length || list[0].text !== 'SELECT') throw new Error('Module 1 is read-only. Start with SELECT to explore the training tables.');
+  if (!list.length || list[0].text !== 'SELECT') throw new Error('This workspace is read-only. Start with SELECT to explore the training tables.');
   if (list.some(t => t.text === ';' && t.kind === 'symbol')) throw new Error('Run one SELECT statement at a time.');
   for (let i = 0; i < list.length; i++) {
     const token = list[i];
-    if (token.kind === 'symbol' && !'(),.*+-/%<>=!'.includes(token.text)) throw new Error('This syntax is outside the Module 1 read-only workspace.');
+    if (token.kind === 'symbol' && !'(),.*+-/%<>=!'.includes(token.text)) throw new Error('This syntax is outside the academy read-only workspace.');
     if (token.kind !== 'word' && token.kind !== 'identifier') continue;
     if (forbidden.has(token.text)) throw new Error(`${token.text} is disabled here to protect the training data. Use SELECT instead.`);
     if (list[i + 1]?.text === '(' && !safeFunctions.has(token.text) && !groupingWords.has(token.text)) {
-      throw new Error(`The function ${token.text} is outside the Module 1 read-only workspace.`);
+      throw new Error(`The function ${token.text} is outside the academy read-only workspace.`);
     }
   }
   return list;

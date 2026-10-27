@@ -24,3 +24,16 @@ describe('learning progress', () => {
     expect(readProgress(store)).toEqual(emptyProgress()); expect(completeLesson(emptyProgress(), 'unknown')).toEqual(emptyProgress());
   });
 });
+
+it('preserves Module 1 storage and recommends Module 2 after its final lesson', () => {
+  const store = storage();
+  const completed = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`m1-${i + 1}`, '2026-01-01T00:00:00Z']));
+  store.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, current: 'm1-8', completed }));
+  const original = readProgress(store);
+  expect(original.completed).toEqual(completed);
+  expect(original.current).toBe('m1-8');
+  expect(recommendedLesson(original)).toBe('m2-1');
+  const next = { ...completeLesson(original, 'm2-1'), current: 'm2-2' };
+  expect(saveProgress(store, next)).toBe(true);
+  expect(readProgress(store)).toEqual(next);
+});
