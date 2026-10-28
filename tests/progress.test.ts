@@ -37,3 +37,16 @@ it('preserves Module 1 storage and recommends Module 2 after its final lesson', 
   expect(saveProgress(store, next)).toBe(true);
   expect(readProgress(store)).toEqual(next);
 });
+
+it('retains both earlier modules and recommends Module 3 without changing the storage version', () => {
+  const store = storage();
+  const completed = Object.fromEntries([1, 2].flatMap(module => Array.from({ length: 8 }, (_, index) => [`m${module}-${index + 1}`, '2026-01-01T00:00:00Z'])));
+  store.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, current: 'm2-8', completed }));
+  const progress = readProgress(store);
+  expect(progress.completed).toEqual(completed);
+  expect(progress.current).toBe('m2-8');
+  expect(recommendedLesson(progress)).toBe('m3-1');
+  const updated = { ...completeLesson(progress, 'm3-1'), current: 'm3-2' };
+  expect(saveProgress(store, updated)).toBe(true);
+  expect(readProgress(store)).toEqual(updated);
+});

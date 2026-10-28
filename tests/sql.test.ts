@@ -20,3 +20,8 @@ describe('Module 1 read-only workflow', () => {
     expect(tokens('SELECT /* nested /* x */ comment */ amount FROM transactions')).toEqual(tokens('SELECT amount FROM transactions'));
   });
 });
+
+it('recognises equivalent outer-join techniques without accepting keywords in text', () => {
+  expect(hasTechnique(tokens('SELECT t.id FROM transactions t LEFT OUTER JOIN categories c ON t.category_id = c.id'), 'LEFT JOIN')).toBe(true);
+  expect(hasTechnique(tokens("SELECT 'LEFT OUTER JOIN' FROM transactions"), 'LEFT JOIN')).toBe(false);
+});

@@ -59,5 +59,9 @@ export function assertReadOnly(sql: string): Token[] {
 }
 export function hasTechnique(list: Token[], technique: string): boolean {
   const parts = technique.split(' ');
-  return list.some((_, i) => parts.every((part, j) => list[i + j]?.kind === 'word' && list[i + j].text === part));
+  // LEFT OUTER JOIN and LEFT JOIN express the same taught operation.
+  const canonical = list.filter((token, index) => !(token.kind === 'word' && token.text === 'OUTER'
+    && list[index - 1]?.kind === 'word' && ['LEFT', 'RIGHT', 'FULL'].includes(list[index - 1].text)
+    && list[index + 1]?.kind === 'word' && list[index + 1].text === 'JOIN'));
+  return canonical.some((_, i) => parts.every((part, j) => canonical[i + j]?.kind === 'word' && canonical[i + j].text === part));
 }

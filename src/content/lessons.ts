@@ -1,5 +1,6 @@
 import type { Lesson } from '../types';
 import { module2Lessons } from './module2';
+import { module3Lessons } from './module3';
 type Content = Omit<Lesson, 'id' | 'module' | 'prerequisites' | 'terminal' | 'completionCriteria'>;
 const content: Content[] = [
   {
@@ -111,9 +112,10 @@ const module1Lessons: Lesson[] = content.map((item, index) => ({
 export const modules = [
   { id: 1, title: 'SQL fundamentals', lessons: module1Lessons },
   { id: 2, title: 'Aggregation and financial analysis', lessons: module2Lessons },
+  { id: 3, title: 'Relational data', lessons: module3Lessons },
 ];
 export const lessons: Lesson[] = modules.flatMap(module => module.lessons);
 export const plannedModules = [
-  'Relational data', 'Importing and cleaning data',
+  'Importing and cleaning data',
   'Database management', 'Advanced analytical SQL', 'DuckDB CLI and Python', 'Accounting laboratory',
 ];

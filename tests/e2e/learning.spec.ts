@@ -10,7 +10,7 @@ async function run(page: Page, sql: string) {
   await (await plainEditor(page)).fill(sql);
   await page.getByRole('button', { name: 'Run Query', exact: true }).click();
 }
-test('all sixteen reference solutions execute in real DuckDB and save completion', async ({ page }) => {
+test('all twenty-four reference solutions execute in real DuckDB and save completion', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/'); await ready(page);
   for (const lesson of lessons) {
@@ -25,7 +25,7 @@ test('all sixteen reference solutions execute in real DuckDB and save completion
     await expect(page.getByText('Correct — your actual DuckDB results match the task. Lesson completed.', { exact: true })).toBeVisible();
   }
   await page.reload(); await ready(page);
-  await expect(page.getByText('16 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('24 of 24 lessons completed', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Learning dashboard', exact: true }).click();
   await expect(page.getByText('100%', { exact: true }).first()).toBeVisible();
   expect(errors).toEqual([]);
@@ -34,7 +34,7 @@ test('wrong results, destructive statements and SQL errors cannot complete a les
   await page.goto('/'); await ready(page);
   await run(page, 'SELECT * FROM transactions LIMIT 1;');
   await expect(page.getByText(/Your query returned 1 rows/)).toBeVisible();
-  await expect(page.getByText('0 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('0 of 24 lessons completed', { exact: true })).toBeVisible();
   await run(page, 'DELETE FROM transactions;');
   await expect(page.getByRole('alert', { name: 'SQL query error', exact: true })).toContainText('read-only');
   await run(page, 'SELECT missing_column FROM transactions;');
@@ -46,7 +46,7 @@ test('wrong results, destructive statements and SQL errors cannot complete a les
   await ready(page);
   await run(page, lessons[0].solution);
   await expect(page.getByText('10,000 rows', { exact: true })).toBeVisible();
-  await expect(page.getByText('1 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 of 24 lessons completed', { exact: true })).toBeVisible();
 });
 test('alternative range SQL is accepted and boundaries are exact', async ({ page }) => {
   await page.goto('/'); await ready(page);
@@ -62,7 +62,7 @@ test('hints, solution, terminal, seed download and scoped progress reset work', 
   await page.getByRole('button', { name: /Show hint 1/ }).click();
   await expect(page.getByText('Start with SELECT: it tells DuckDB you want to read data.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Reveal solution', exact: true }).click();
-  await expect(page.getByText('0 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('0 of 24 lessons completed', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Terminal', exact: true }).click();
   await page.getByRole('textbox', { name: 'Simulated terminal command' }).fill('.tables');
   await page.getByRole('button', { name: 'Enter', exact: true }).click();
@@ -75,7 +75,7 @@ test('hints, solution, terminal, seed download and scoped progress reset work', 
   expect((await downloadPromise).suggestedFilename()).toBe('training.sql');
   await page.getByRole('button', { name: 'Reset learning progress', exact: true }).click();
   await page.getByRole('button', { name: 'Reset progress', exact: true }).click();
-  await expect(page.getByText('0 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('0 of 24 lessons completed', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('another-app'))).toBe('keep');
 });
 test('responsive navigation and themes are usable', async ({ page }) => {
@@ -112,9 +112,9 @@ test('Module 2 keeps syntax optional, preserves progress and supports visual and
   await expect(page.getByText(/Correct —/)).toBeVisible();
   await page.reload(); await ready(page);
   await expect(page.getByRole('heading', { name: lessons[8].title, exact: true })).toBeVisible();
-  await expect(page.getByText('2 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('2 of 24 lessons completed', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Retry lesson', exact: true }).click();
-  await expect(page.getByText('1 of 16 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 of 24 lessons completed', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Visual', exact: true }).click();
   await expect(page.getByText('6 after WHERE', { exact: true })).toBeVisible();
   await page.getByRole('slider', { name: 'Minimum individual purchase', exact: true }).fill('50');
@@ -137,4 +137,72 @@ test('Module 2 keeps syntax optional, preserves progress and supports visual and
   await page.screenshot({ path: 'test-results/module2-mobile-dark.png', fullPage: true });
   await page.getByRole('combobox', { name: 'Colour theme' }).selectOption('light');
   await page.screenshot({ path: 'test-results/module2-mobile-light.png', fullPage: true });
+});
+
+test('Module 3 preserves earlier progress and teaches joins without exposing answers', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('duckdb-academy:progress:v1')) {
+      const completed = Object.fromEntries([1, 2].flatMap(module => Array.from({ length: 8 }, (_, index) => [`m${module}-${index + 1}`, '2026-01-01T00:00:00Z'])));
+      localStorage.setItem('duckdb-academy:progress:v1', JSON.stringify({ version: 1, current: 'm2-8', completed }));
+    }
+  });
+  await page.goto('/'); await ready(page);
+  await expect(page.getByText('16 of 24 lessons completed', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Next lesson', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Keys and relationships', exact: true })).toBeVisible();
+  await expect(page.getByText('MODULE 03 / LESSON 01', { exact: true })).toBeVisible();
+  await expect(page.locator('#lesson-syntax')).toBeHidden();
+  await expect(page.locator('#complete-answer')).toBeHidden();
+  await page.getByRole('button', { name: 'Reveal solution', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#complete-answer pre code')).toHaveText(lessons[16].solution);
+  await expect(page.getByText('16 of 24 lessons completed', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Load solution into editor', exact: true }).click();
+  await page.getByRole('button', { name: 'Run Query', exact: true }).click();
+  await expect(page.getByText(/Correct —/)).toBeVisible();
+  await page.reload(); await ready(page);
+  await expect(page.getByText('17 of 24 lessons completed', { exact: true })).toBeVisible();
+  await expect(page.locator('#complete-answer')).toBeHidden();
+  const module3 = page.getByRole('navigation', { name: 'Module 3 lessons' });
+  await module3.getByRole('button', { name: /LEFT JOIN: keep missing categories/ }).click();
+  await page.getByRole('tab', { name: 'Visual', exact: true }).click();
+  await expect(page.getByText('5 sample result rows · 4 matched pairs', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Join type', exact: true }).selectOption('INNER');
+  await expect(page.getByText('4 sample result rows · 4 matched pairs', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Join type', exact: true }).selectOption('LEFT');
+  await page.getByRole('combobox', { name: 'Left-hand source', exact: true }).selectOption('lookup');
+  await page.getByRole('checkbox', { name: 'Match only negative transactions', exact: true }).check();
+  const preview = page.getByRole('region', { name: 'Sample join result', exact: true });
+  await expect(preview.getByRole('cell', { name: 'Salary', exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Amount filter placement', exact: true }).selectOption('WHERE');
+  await expect(preview.getByRole('cell', { name: 'Salary', exact: true })).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Amount filter placement', exact: true }).selectOption('ON');
+  await page.getByRole('button', { name: 'Reveal visual SQL', exact: true }).click();
+  await page.getByRole('button', { name: 'Run visual join on the full dataset', exact: true }).click();
+  await expect(page.getByText('Query complete', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Colour theme' }).selectOption('light');
+  await page.getByRole('heading', { name: 'Follow the keys and see which rows survive', exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'test-results/module3-desktop-light.png' });
+  await page.getByRole('combobox', { name: 'Colour theme' }).selectOption('dark');
+  await page.getByRole('heading', { name: 'Follow the keys and see which rows survive', exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'test-results/module3-desktop-dark.png' });
+  await page.getByRole('tab', { name: 'SQL editor', exact: true }).click();
+  await run(page, lessons[19].solution.replace('LEFT JOIN', 'INNER JOIN'));
+  await expect(page.getByText(/Your query returned .* rows; the task needs 10,000/)).toBeVisible();
+  await run(page, lessons[19].solution.replace('LEFT JOIN', 'LEFT OUTER JOIN'));
+  await expect(page.getByText(/Correct —/)).toBeVisible();
+  await page.getByRole('button', { name: 'Reveal solution', exact: true }).click();
+  await page.getByRole('button', { name: 'Retry lesson', exact: true }).click();
+  await expect(page.locator('#complete-answer')).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open course navigation', exact: true }).click();
+  await module3.getByRole('button', { name: /Build a joined spending report/ }).click();
+  await expect(page.getByRole('heading', { name: lessons[23].title, exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/module3-mobile-dark.png', fullPage: true });
+  await page.getByRole('combobox', { name: 'Colour theme' }).selectOption('light');
+  await page.screenshot({ path: 'test-results/module3-mobile-light.png', fullPage: true });
+  await page.getByRole('button', { name: 'Reveal solution', exact: true }).click();
+  await expect(page.locator('#complete-answer pre code')).toHaveText(lessons[23].solution);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

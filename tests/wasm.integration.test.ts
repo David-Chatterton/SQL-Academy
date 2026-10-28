@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
-import { generateTransactions, nativeSeedSQL, seedStatements } from '../src/data/finance';
+import { accounts, categories, payees, money, generateTransactions, nativeSeedSQL, seedStatements } from '../src/data/finance';
 import { lessons } from '../src/content/lessons';
 import { decodeTable, validateResult } from '../src/engine/results';
 import { assertReadOnly } from '../src/engine/sql';
@@ -146,5 +146,107 @@ describe('Module 2 aggregates against real DuckDB', () => {
     database.open({ query: { castDecimalToDouble: false, castBigIntToDouble: false } });
     connection = database.connect(); connection.query(nativeSeedSQL());
     for (const [index, lesson] of module2.entries()) expect(run(lesson.solution).rows).toEqual(reports[index]);
+  });
+});
+
+describe('Module 3 relational queries against real DuckDB', () => {
+  const transactions = generateTransactions();
+  const module3 = lessons.filter(lesson => lesson.module === 3);
+  const categoryName = (id: number | null) => id === null ? null : categories[id - 1];
+  const outflows2025 = transactions.filter(row => row.date.startsWith('2025') && row.pence < 0);
+  const groups = new Map<string, typeof transactions>();
+  for (const row of outflows2025) {
+    if (categoryName(row.categoryId) === 'Transfers') continue;
+    const key = JSON.stringify([row.accountId, categoryName(row.categoryId) ?? 'Uncategorised']);
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+  const report = [...groups].map(([key, rows]) => {
+    const [id, category] = JSON.parse(key) as [number, string];
+    return { id, category, count: rows.length, pence: -rows.reduce((sum, row) => sum + row.pence, 0) };
+  }).sort((a, b) => b.pence - a.pence || a.id - b.id || a.category.localeCompare(b.category))
+    .map(row => [row.id, accounts.find(account => account.id === row.id)!.name, row.category, String(row.count), money(row.pence)]);
+  const expectedRows = [
+    accounts.map(account => [account.id, account.name, account.type, 'GBP']),
+    transactions.map(row => [row.id, row.date, accounts.find(account => account.id === row.accountId)!.name, money(row.pence)]),
+    transactions.map(row => [row.id, accounts.find(account => account.id === row.accountId)!.name, payees.find(payee => payee.id === row.payeeId)!.name, money(row.pence)]),
+    transactions.map(row => [row.id, row.categoryId, categoryName(row.categoryId), money(row.pence)]),
+    transactions.filter(row => row.categoryId === null).map(row => [row.id, row.date, row.payee, money(row.pence)]),
+    categories.map((name, i) => [i + 1, name, String(outflows2025.filter(row => row.categoryId === i + 1).length)]),
+    accounts.map(account => {
+      const rows = transactions.filter(row => row.accountId === account.id && row.pence < 0 && row.category !== 'Transfers');
+      return [account.id, account.name, String(rows.length), money(-rows.reduce((sum, row) => sum + row.pence, 0))];
+    }),
+    report,
+  ];
+  for (const [index, lesson] of module3.entries()) {
+    it(`matches ${lesson.id} to independently calculated seeded records`, () => {
+      const actual = run(lesson.solution);
+      expect(actual.rows).toEqual(expectedRows[index]);
+      expect(validateResult(actual, actual, lesson, lesson.solution).ok).toBe(true);
+      const altered = { ...actual, rows: actual.rows.slice(1) };
+      expect(validateResult(altered, actual, lesson, lesson.solution).ok).toBe(false);
+    });
+  }
+  it('accepts equivalent joins and rejects the wrong relationship or payee text', () => {
+    for (const index of [1, 3, 4, 5, 6, 7]) {
+      const lesson = module3[index];
+      const alternative = lesson.solution.replaceAll('INNER JOIN', 'JOIN').replaceAll('LEFT JOIN', 'LEFT OUTER JOIN');
+      expect(validateResult(run(alternative), run(lesson.solution), lesson, alternative).ok).toBe(true);
+    }
+    const account = module3[1];
+    const wrongKey = account.solution.replace('t.account_id = a.id', 't.id = a.id');
+    expect(validateResult(run(wrongKey), run(account.solution), account, wrongKey).ok).toBe(false);
+    const payee = module3[2];
+    for (const wrong of [payee.solution.replace('t.payee_id = p.id', 't.payee = p.name'), payee.solution.replace('p.name AS payee_name', 't.payee AS payee_name')]) {
+      expect(validateResult(run(wrong), run(payee.solution), payee, wrong).ok).toBe(false);
+    }
+  });
+  it('distinguishes missing category relationships from matches', () => {
+    const lesson = module3[3], expected = run(lesson.solution);
+    const inner = lesson.solution.replace('LEFT JOIN', 'INNER JOIN');
+    expect(validateResult(run(inner), expected, lesson, inner).ok).toBe(false);
+    const missing = module3[4];
+    const wrongNull = missing.solution.replace('c.id IS NULL', 'c.id = NULL');
+    expect(run(wrongNull).rows).toHaveLength(0);
+    const inferredCategory = lesson.solution.replace('t.category_id = c.id', 't.payee_id = c.id');
+    expect(validateResult(run(inferredCategory), expected, lesson, inferredCategory).ok).toBe(false);
+  });
+  it('keeps zero-activity categories and rejects WHERE and COUNT(*) mistakes', () => {
+    const lesson = module3[5], expected = run(lesson.solution);
+    expect(expected.rows).toHaveLength(12);
+    expect(expected.rows.filter(row => row[2] === '0').map(row => row[1])).toEqual(['Salary', 'Refunds']);
+    const where = lesson.solution.replace('  AND t.amount < 0', 'WHERE t.amount < 0');
+    const count = lesson.solution.replace('COUNT(t.id)', 'COUNT(*)');
+    for (const wrong of [where, count]) expect(validateResult(run(wrong), expected, lesson, wrong).ok).toBe(false);
+  });
+  it('retains the savings account with exact zero totals and excludes transfer amounts', () => {
+    const lesson = module3[6], expected = run(lesson.solution);
+    expect(expected.rows).toContainEqual([3, 'Rainy day savings', '0', '0.00']);
+    for (const wrong of [lesson.solution.replace('COUNT(t.id)', 'COUNT(*)'), lesson.solution.replace('COALESCE(-SUM(t.amount), 0)', '-SUM(t.amount)'), lesson.solution.replace('LEFT JOIN', 'INNER JOIN'), lesson.solution.replace("AND (t.category <> 'Transfers' OR t.category IS NULL)", '')]) {
+      expect(validateResult(run(wrong), expected, lesson, wrong).ok).toBe(false);
+    }
+  });
+  it('rejects final reports that lose NULL categories, include transfers or use the wrong year', () => {
+    const lesson = module3[7], expected = run(lesson.solution);
+    expect(expected.rows.some(row => row[2] === 'Uncategorised')).toBe(true);
+    expect(expected.rows.every(row => row[2] !== 'Transfers')).toBe(true);
+    for (const wrong of [lesson.solution.replace('LEFT JOIN', 'INNER JOIN'), lesson.solution.replace("OR c.id IS NULL", ''), lesson.solution.replace("date >= '2025-01-01'", "date >= '2024-01-01'"), lesson.solution.replace("AND (c.name <> 'Transfers' OR c.id IS NULL)", '')]) {
+      expect(validateResult(run(wrong), expected, lesson, wrong).ok).toBe(false);
+    }
+  });
+  it('enforces parent primary keys and transaction foreign keys in the real schema', () => {
+    for (const sql of ["INSERT INTO categories VALUES (1, 'Duplicate key');", "INSERT INTO categories VALUES (NULL, 'Missing key');", 'UPDATE transactions SET category_id = 999 WHERE id = 1;']) {
+      connection.query('BEGIN TRANSACTION');
+      try { expect(() => connection.query(sql)).toThrow(); }
+      finally { connection.query('ROLLBACK'); }
+    }
+    expect(run(module3[0].solution).rows).toHaveLength(4);
+  });
+  it('reproduces all joined reports from the downloaded native seed', () => {
+    const reports = module3.map(lesson => run(lesson.solution).rows);
+    connection.close(); database.reset();
+    database.open({ query: { castDecimalToDouble: false, castBigIntToDouble: false } });
+    connection = database.connect(); connection.query(nativeSeedSQL());
+    for (const [index, lesson] of module3.entries()) expect(run(lesson.solution).rows).toEqual(reports[index]);
   });
 });
