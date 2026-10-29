@@ -1490,7 +1490,7 @@ footer button {
   .lesson-reading section {
     margin:0
   }
-  .lesson-reading section:nth-child(2) {
+  .lesson-reading .lesson-explanation {
     grid-column:1/-1
   }
   .excel-note {
@@ -1671,3 +1671,23 @@ footer button {
   }
 }
 
+
+.cleaning-files {
+  grid-column:1/-1;
+  min-width:0;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--surface-alt)
+}
+
+.cleaning-files .assistance {
+  padding:0;
+  margin:12px 0;
+  flex-wrap:wrap
+}
+
+.cleaning-files summary {
+  cursor:pointer;
+  padding:8px 0
+}

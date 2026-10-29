@@ -1,3 +1,4 @@
+import { cleaningFiles, type Workspace } from '../data/cleaning';
 export interface Token { text: string; kind: 'word' | 'identifier' | 'literal' | 'symbol' }
 // A small lexer, not a substitute SQL parser. DuckDB remains responsible for syntax.
 // It removes comments and keeps literals separate so words inside them cannot count as techniques.
@@ -40,7 +41,7 @@ export function tokens(sql: string): Token[] {
 const forbidden = new Set('INSERT UPDATE DELETE CREATE DROP ALTER TRUNCATE COPY EXPORT IMPORT ATTACH DETACH INSTALL LOAD PRAGMA CALL SET RESET VACUUM CHECKPOINT BEGIN COMMIT ROLLBACK REPLACE MERGE GRANT REVOKE INTO'.split(' '));
 const safeFunctions = new Set('ABS ROUND LOWER UPPER TRIM LENGTH COALESCE NULLIF CAST TRY_CAST COUNT SUM AVG MIN MAX'.split(' '));
 const groupingWords = new Set('SELECT WHERE AND OR NOT IN AS ON WHEN THEN ELSE FROM HAVING DISTINCT'.split(' '));
-export function assertReadOnly(sql: string): Token[] {
+export function assertReadOnly(sql: string, workspace: Workspace = 'finance'): Token[] {
   if (sql.length > 20000) throw new Error('Keep Academy queries under 20,000 characters.');
   const list = tokens(sql);
   if (list.at(-1)?.text === ';' && list.at(-1)?.kind === 'symbol') list.pop();
@@ -51,7 +52,8 @@ export function assertReadOnly(sql: string): Token[] {
     if (token.kind === 'symbol' && !'(),.*+-/%<>=!'.includes(token.text)) throw new Error('This syntax is outside the academy read-only workspace.');
     if (token.kind !== 'word' && token.kind !== 'identifier') continue;
     if (forbidden.has(token.text)) throw new Error(`${token.text} is disabled here to protect the training data. Use SELECT instead.`);
-    if (list[i + 1]?.text === '(' && !safeFunctions.has(token.text) && !groupingWords.has(token.text)) {
+    if (workspace === 'cleaning' && ['READ_CSV', 'READ_PARQUET'].includes(token.text) && list[i + 1]?.text === '(') assertFixtureReader(list, i);
+    if (list[i + 1]?.text === '(' && !safeFunctions.has(token.text) && !groupingWords.has(token.text) && !(workspace === 'cleaning' && ['READ_CSV', 'READ_PARQUET', 'TRY_STRPTIME', 'DECIMAL'].includes(token.text))) {
       throw new Error(`The function ${token.text} is outside the academy read-only workspace.`);
     }
   }
@@ -64,4 +66,22 @@ export function hasTechnique(list: Token[], technique: string): boolean {
     && list[index - 1]?.kind === 'word' && ['LEFT', 'RIGHT', 'FULL'].includes(list[index - 1].text)
     && list[index + 1]?.kind === 'word' && list[index + 1].text === 'JOIN'));
   return canonical.some((_, i) => parts.every((part, j) => canonical[i + j]?.kind === 'word' && canonical[i + j].text === part));
+}
+
+function assertFixtureReader(list: Token[], index: number): void {
+  const csv = list[index].text === 'READ_CSV';
+  const path = list[index + 2];
+  if (path?.kind !== 'literal' || path.text !== (csv ? cleaningFiles.csv : cleaningFiles.parquet)) {
+    throw new Error('Read only the supplied statement.csv or statement.parquet fixture with its matching reader.');
+  }
+  let cursor = index + 3;
+  while (list[cursor]?.text === ',') {
+    const option = list[cursor + 1], equals = list[cursor + 2], value = list[cursor + 3];
+    if (!csv || option?.kind !== 'word' || !['HEADER', 'ALL_VARCHAR'].includes(option.text)
+      || equals?.text !== '=' || value?.kind !== 'word' || !['TRUE', 'FALSE'].includes(value.text)) {
+      throw new Error('CSV practice supports only header and all_varchar boolean options. Parquet needs only its fixture filename.');
+    }
+    cursor += 4;
+  }
+  if (list[cursor]?.text !== ')') throw new Error('Use the exact supplied fixture filename, not a path expression or file list.');
 }

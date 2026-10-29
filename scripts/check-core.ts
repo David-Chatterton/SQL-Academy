@@ -16,9 +16,9 @@ for (let id = 1; id <= 48; id++) {
 assert.equal(rows.filter(r => r.pence < -100000 && r.category !== 'Housing' && r.category !== 'Transfers').length, 3);
 assert(rows.some(r => r.category === null)); assert(rows.some(r => r.duplicateOf !== null));
 assert.equal(money(-1), '-0.01'); assert(nativeSeedSQL().includes('DECIMAL(12,2)'));
-assert.equal(lessons.length, 24);
+assert.equal(lessons.length, 32);
 for (const lesson of lessons) {
-  assertReadOnly(lesson.solution); assert.equal(lesson.hints.length, 3); assert(lesson.objectives.length);
+  assertReadOnly(lesson.solution, lesson.module === 4 ? 'cleaning' : 'finance'); assert.equal(lesson.hints.length, 3); assert(lesson.objectives.length);
   assert(lesson.explanation.length); assert(lesson.terminal); assert(lesson.solutionWhy);
 }
 for (const sql of ['DELETE FROM transactions', 'SELECT * FROM transactions; DROP TABLE transactions;', "SELECT * FROM read_csv('file.csv')", "SELECT query('DELETE FROM transactions')"]) assert.throws(() => assertReadOnly(sql));

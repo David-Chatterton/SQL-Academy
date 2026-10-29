@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ query: vi.fn(), close: vi.fn(), instantiate: vi.fn(), open: vi.fn(), terminate: vi.fn(), workerTerminate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ query: vi.fn(), close: vi.fn(), instantiate: vi.fn(), open: vi.fn(), terminate: vi.fn(), workerTerminate: vi.fn(), registerFileText: vi.fn(), copyFileToBuffer: vi.fn() }));
 vi.mock('@duckdb/duckdb-wasm', () => ({
   selectBundle: async () => ({ mainModule: 'module.wasm', mainWorker: 'worker.js', pthreadWorker: null }),
   ConsoleLogger: class {}, LogLevel: { WARNING: 3 },
   AsyncDuckDB: class {
-    instantiate = mocks.instantiate; open = mocks.open; terminate = mocks.terminate;
+    instantiate = mocks.instantiate; open = mocks.open; terminate = mocks.terminate; registerFileText = mocks.registerFileText; copyFileToBuffer = mocks.copyFileToBuffer;
     async connect() { return { query: mocks.query, close: mocks.close }; }
   },
 }));
@@ -60,4 +60,25 @@ describe('DuckDB adapter lifecycle (mocked bindings; real browser tested by Play
     expect(mocks.query.mock.calls.filter(([sql]) => String(sql).startsWith('INSERT INTO transactions'))).toHaveLength(40);
     await reset.dispose();
   });
+});
+
+it('seeds a separate cleaning workspace, locks its file access and preserves finance guards', async () => {
+  const database = new AcademyDatabase('cleaning'); await database.initialise();
+  expect(mocks.registerFileText).toHaveBeenCalledWith('statement.csv', expect.stringContaining('source_row,posted_on,payee,category,amount,reference'));
+  const queries = mocks.query.mock.calls.map(([sql]) => String(sql));
+  expect(queries.some(sql => sql.startsWith('INSERT INTO transactions'))).toBe(false);
+  expect(queries).toContain('LOAD parquet;');
+  expect(queries.some(sql => sql.includes('CREATE TABLE raw_statement'))).toBe(true);
+  expect(queries.some(sql => sql.includes("allowed_paths = ['statement.csv', 'statement.parquet']"))).toBe(true);
+  mocks.query.mockClear();
+  await database.query("SELECT * FROM read_csv('statement.csv', all_varchar = true);");
+  expect(mocks.query.mock.calls.map(([sql]) => sql)).toEqual(['BEGIN TRANSACTION', "SELECT * FROM read_csv('statement.csv', all_varchar = true);", 'ROLLBACK']);
+  await expect(database.query("SELECT * FROM read_csv('private.csv');")).rejects.toThrow();
+  mocks.copyFileToBuffer.mockResolvedValue(new Uint8Array([80, 65, 82, 49]));
+  expect(await database.downloadFile('statement.parquet')).toEqual(new Uint8Array([80, 65, 82, 49]));
+  await database.dispose();
+  const finance = new AcademyDatabase(); await finance.initialise();
+  await expect(finance.query("SELECT * FROM read_csv('statement.csv');")).rejects.toThrow();
+  await expect(finance.downloadFile('statement.parquet')).rejects.toThrow();
+  await finance.dispose();
 });

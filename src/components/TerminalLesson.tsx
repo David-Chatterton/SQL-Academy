@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Lesson, QueryResult } from '../types';
 import { nativeSeedSQL } from '../data/finance';
+import { cleaningNativeSetup } from '../data/cleaning';
 export function downloadSeed() {
   const url = URL.createObjectURL(new Blob([nativeSeedSQL()], { type: 'text/plain;charset=utf-8' }));
   const link = document.createElement('a'); link.href = url; link.download = 'training.sql'; link.click();
@@ -18,9 +19,11 @@ export function TerminalLesson({ lesson, execute, disabled }: Props) {
     setHistory(h => [...h, `${pending ? '...> ' : 'D> '}${input}`]);
     if (!pending && input.startsWith('.')) {
       if (input === '.clear') { setHistory([]); return; }
-      const response = input === '.help' ? 'Simulated commands: .tables, .schema transactions, .mode table, .clear, .help. SQL ends with a semicolon.'
-        : input === '.tables' ? 'accounts  budgets  categories  payees  transactions'
-        : input === '.schema transactions' ? 'transactions: id INTEGER PRIMARY KEY, date DATE, account_id INTEGER, payee_id INTEGER, payee VARCHAR, category_id INTEGER, category VARCHAR, amount DECIMAL(12,2), description VARCHAR, transfer_id INTEGER, duplicate_of INTEGER'
+      const response = input === '.help' ? `Simulated commands: .tables, .schema ${lesson.module === 4 ? 'raw_statement, .schema clean_candidates' : 'transactions'}, .mode table, .clear, .help. SQL ends with a semicolon.`
+        : input === '.tables' ? lesson.module === 4 ? 'clean_candidates  raw_statement' : 'accounts  budgets  categories  payees  transactions'
+        : input === '.schema raw_statement' && lesson.module === 4 ? 'raw_statement: source_row VARCHAR, posted_on VARCHAR, payee VARCHAR, category VARCHAR, amount VARCHAR, reference VARCHAR'
+        : input === '.schema clean_candidates' && lesson.module === 4 ? 'clean_candidates: source_row INTEGER, posted_date DATE, payee_name VARCHAR, category_name VARCHAR, amount DECIMAL(12,2), reference VARCHAR'
+        : input === '.schema transactions' && lesson.module !== 4 ? 'transactions: id INTEGER PRIMARY KEY, date DATE, account_id INTEGER, payee_id INTEGER, payee VARCHAR, category_id INTEGER, category VARCHAR, amount DECIMAL(12,2), description VARCHAR, transfer_id INTEGER, duplicate_of INTEGER'
         : input === '.mode table' ? 'Simulation displays results as a table in the grid below.' : 'This dot command is not simulated. Use .help.';
       setHistory(h => [...h, response]); return;
     }
@@ -39,7 +42,13 @@ export function TerminalLesson({ lesson, execute, disabled }: Props) {
       <form onSubmit={e => void submit(e)}><label htmlFor="terminal-command">{pending ? '...>' : 'D>'}</label><input id="terminal-command" aria-label="Simulated terminal command" autoComplete="off" spellCheck={false} value={command} onChange={e => setCommand(e.target.value)} disabled={disabled}/><button disabled={disabled || !command.trim()}>Enter</button></form>
     </div>
     {pending && <button onClick={() => { setPending(''); setHistory(h => [...h, 'Buffered statement discarded.']); }}>Discard buffered statement</button>}
-    <details className="native-instructions" open><summary>Run this on your own CachyOS terminal</summary>
+    {lesson.module === 4 ? <details className="native-instructions" open><summary>Practise Module 4 in your own terminal</summary>
+      <p>Download statement.csv, statement.parquet and cleaning-setup.sql from the practice box on this page. Keep them in the same directory. The setup recreates the matching raw table, prepared view and Parquet extract from the CSV.</p>
+      <pre>cd ~/Downloads{'\n'}duckdb cleaning.duckdb{'\n'}.read cleaning-setup.sql{'\n'}.tables{'\n'}.schema raw_statement{'\n'}.mode table</pre>
+      <p>Use a fresh database. Run the setup once; it deliberately fails if raw_statement already exists. Queries in the browser accept SELECT only and can read only the supplied files.</p>
+      <details><summary>Reveal native setup SQL</summary><pre className="sql-block"><code>{cleaningNativeSetup()}</code></pre></details>
+      <p>Now run your lesson’s query, or reveal the complete answer below. These instructions do not execute commands on your computer.</p>
+    </details> : <details className="native-instructions" open><summary>Run this on your own CachyOS terminal</summary>
       <p>These commands are instructions for your real computer. This app does not install software or execute shell commands.</p>
       <ol>
         <li>Check availability, then install using your normal CachyOS package workflow:<pre>pacman -Si duckdb{'\n'}sudo pacman -Syu duckdb{'\n'}duckdb --version</pre><p>The official Arch Extra repository and CachyOS package index list DuckDB. Verify the package on your system first. If it is unavailable, follow the <a href="https://duckdb.org/docs/stable/installation/" target="_blank" rel="noreferrer">official DuckDB installation guide</a> for a Linux CLI binary. Do not run an unreviewed downloaded script.</p></li>
@@ -49,6 +58,6 @@ export function TerminalLesson({ lesson, execute, disabled }: Props) {
         <li>Export a small CSV, then import it into a separate practice table:<pre>{"COPY (SELECT date, payee, amount FROM transactions LIMIT 100)\nTO 'sample.csv' (HEADER, DELIMITER ',');\nCREATE TABLE imported_sample AS\nSELECT * FROM read_csv('sample.csv', header = true);\nSELECT * FROM imported_sample LIMIT 5;"}</pre><p>These write-enabled commands belong in your native training database. The browser editor accepts SELECT only.</p></li>
       </ol>
       <p>Sources: <a href="https://archlinux.org/packages/extra/x86_64/duckdb/">Arch package</a>, <a href="https://packages.cachyos.org/package/extra/x86_64/duckdb">CachyOS package</a>, <a href="https://duckdb.org/docs/stable/clients/cli/overview">DuckDB CLI documentation</a>. Availability checked 11 October 2026; local repositories can differ.</p>
-    </details>
+    </details>}
   </div>;
 }

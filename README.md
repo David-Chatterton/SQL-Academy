@@ -1,6 +1,6 @@
 # DuckDB Academy v0.1
 
-A local, browser-based SQL learning application for an Excel-experienced beginner. Modules 1 and 2 contain sixteen lessons using fictional financial data: SQL fundamentals, then aggregation and financial analysis. Modules 3–8 are a clearly labelled roadmap.
+A local, browser-based SQL learning application for an Excel-experienced beginner. Modules 1–4 contain 32 lessons: SQL fundamentals, aggregation, relational joins, and importing/cleaning statement data. Modules 5–8 are a clearly labelled roadmap.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ npm run preview
 
 ## What is implemented
 
-- Sixteen structured lessons across Modules 1 and 2 with objectives, beginner explanations, Excel equivalents, syntax breakdowns, tasks, editable queries, hints, solutions and solution explanations.
+- 32 structured lessons across Modules 1–4 with objectives, beginner explanations, Excel equivalents, syntax breakdowns, tasks, editable queries, hints, solutions and solution explanations.
 - DuckDB-Wasm running in a worker, seeded on initialisation, with real results and SQL errors, cancellation on reset, initialisation/query timeouts and resource disposal.
 - SELECT-only workflow, external access disabled, configuration locked and learner transactions rolled back.
 - Monaco SQL editor, plain-text accessible alternative, Run Query, Ctrl/Command+Enter, copy and reset controls, paginated results with column types.
@@ -71,15 +71,21 @@ Use a fresh database. The seed is wrapped in a transaction and intentionally doe
 
 ## Add lessons
 
-Add a lesson object to `src/content/lessons.ts` conforming to `Lesson` in `src/types.ts`. Define the objectives, explanation, visual type, task, starter, reference solution, hints, expected ordering and any required technique. The reference query executes against the same actual database to establish expected results. Add acceptance and rejection cases and extend browser coverage. The module registry in `src/content/lessons.ts` drives navigation and reporting; Module 2 content lives in `src/content/module2.ts`. Add future modules to that registry.
+Add a lesson object to `src/content/lessons.ts` conforming to `Lesson` in `src/types.ts`. Define the objectives, explanation, visual type, task, starter, reference solution, hints, expected ordering and any required technique. The reference query executes against the same actual database to establish expected results. Add acceptance and rejection cases and extend browser coverage. The module registry in `src/content/lessons.ts` drives navigation and reporting; additional modules live in `src/content/module2.ts`, `module3.ts` and `module4.ts`. Add future modules to that registry.
 
 ## Verification status in the implementation environment
 
-Verified on 25 October 2026 with the installed dependency tree:
+Verified on 28 October 2026 with the installed dependency tree:
 
 - Core smoke check, ESLint, TypeScript and Vite production build passed.
-- All 45 Vitest tests across six files passed, including real DuckDB-Wasm execution of both modules, independent aggregate calculations, incorrect-answer rejection, progress compatibility and native-seed parity.
-- All six Chromium Playwright tests passed, including all 16 reference solutions, completion persistence, module transitions, optional syntax, editor reset, terminal and visual practice, and mobile navigation. Desktop and mobile screenshots were inspected in both light and dark themes.
+- All 83 Vitest tests across nine files passed, including real DuckDB-Wasm execution of Modules 1–4, independent calculations, incorrect-answer rejection, isolated fixture access, progress compatibility and native-setup parity. The 14 cleaning integration checks also passed with the fallback MVP engine.
+- All nine Chromium Playwright tests passed, including all 32 reference solutions, completion persistence, module transitions, optional syntax, editor reset, terminal and visual practice, practice-file downloads, workspace switching and mobile navigation. Desktop and mobile screenshots were inspected in both light and dark themes.
 - The build still reports a large JavaScript chunk warning. No fresh dependency audit or deployment was performed.
 
 The simulated terminal never executes host shell commands. Native-seed parity is checked with the same DuckDB-Wasm engine; this does not replace testing a separately installed native CLI version.
+
+## Module 4 practice workspace
+
+Module 4 uses a separate disposable database with a fixed 12-row statement fixture. Read the real CSV and Parquet files, inspect parsing failures, standardise text, review rejected rows, deduplicate business records and build a clean spending report. Its practice box downloads the matching CSV, Parquet and native setup SQL. Query and database resets preserve course progress. Switching to earlier modules recreates their original financial database.
+
+Parquet support uses the signed local extension assets in `public/duckdb-extensions`; these match DuckDB v1.4.3 in the installed WASM package. Keep both variants aligned with future engine upgrades. Learner queries can read only the supplied fixture files; arbitrary uploads, remote reads and persistent SQL writes are not enabled.

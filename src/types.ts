@@ -1,7 +1,7 @@
 export type Cell = string | number | boolean | null;
 export interface Column { name: string; type: string; numeric: boolean }
 export interface QueryResult { columns: Column[]; rows: Cell[][]; elapsedMs: number }
-export type VisualKind = 'table' | 'projection' | 'filter' | 'range' | 'logic' | 'sort' | 'distinct' | 'investigate' | 'aggregate' | 'join';
+export type VisualKind = 'table' | 'projection' | 'filter' | 'range' | 'logic' | 'sort' | 'distinct' | 'investigate' | 'aggregate' | 'join' | 'cleaning';
 export interface Lesson {
   id: string; title: string; module: number; prerequisites: string[]; concepts: string[];
   objectives: string[]; explanation: string[]; excel: string; syntax: { clause: string; meaning: string }[];

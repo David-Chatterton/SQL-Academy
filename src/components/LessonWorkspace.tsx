@@ -6,11 +6,13 @@ import { SqlEditor } from './SqlEditor';
 import { ResultsGrid } from './ResultsGrid';
 import { VisualLesson } from './VisualLesson';
 import { TerminalLesson } from './TerminalLesson';
+import { CleaningFiles } from './CleaningFiles';
 interface Props {
   lesson: Lesson; index: number; hasNext: boolean; prerequisiteLabel: string; dark: boolean; ready: boolean; completed: boolean;
+  downloadFile(name: 'statement.csv' | 'statement.parquet'): Promise<Uint8Array>;
   query(sql: string): Promise<QueryResult>; complete(): void; retry(): void; next(): void;
 }
-export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dark, ready, completed, query, complete, retry, next }: Props) {
+export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dark, ready, completed, downloadFile, query, complete, retry, next }: Props) {
   const [tab, setTab] = useState<'sql' | 'visual' | 'terminal'>('sql');
   const [sql, setSql] = useState(lesson.starter);
   const [result, setResult] = useState<QueryResult | null>(null);
@@ -45,8 +47,9 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
     <div className="lesson-top"><div><span className="eyebrow">MODULE {String(lesson.module).padStart(2, '0')} / LESSON {String(index + 1).padStart(2, '0')}</span><h1>{lesson.title}</h1></div><span className={`lesson-badge ${completed ? 'done' : ''}`}>{completed ? <><CheckCircle2 size={15}/>Completed</> : 'In progress'}</span></div>
     <div className="workspace-panels">
       <article className="lesson-reading">
+        {lesson.module === 4 && <CleaningFiles ready={ready} downloadFile={downloadFile}/>}
         <section><span className="eyebrow">LEARNING OBJECTIVES</span><ul className="objectives">{lesson.objectives.map(o => <li key={o}>{o}</li>)}</ul></section>
-        <section><span className="eyebrow">UNDERSTAND</span>{lesson.explanation.map(p => <p key={p}>{p}</p>)}</section>
+        <section className="lesson-explanation"><span className="eyebrow">UNDERSTAND</span>{lesson.explanation.map(p => <p key={p}>{p}</p>)}</section>
         <aside className="excel-note"><span className="eyebrow">FROM YOUR EXCEL TOOLKIT</span><p>{lesson.excel}</p></aside>
         <section className="task-card"><span className="eyebrow">YOUR TASK</span><p>{lesson.task}</p><small>{lesson.completionCriteria}</small></section>
         <section><h3>Read the syntax</h3><button aria-expanded={syntaxVisible} aria-controls="lesson-syntax" onClick={() => setSyntaxVisible(visible => !visible)}><Eye size={16}/>{syntaxVisible ? 'Hide the syntax' : 'Reveal the syntax'}</button><div id="lesson-syntax" hidden={!syntaxVisible}>{syntaxVisible && <dl className="syntax-list">{lesson.syntax.map(s => <div key={s.clause}><dt><code>{s.clause}</code></dt><dd>{s.meaning}</dd></div>)}</dl>}</div></section>
@@ -59,7 +62,7 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
             e.preventDefault(); const target = e.key === 'Home' ? 'visual' : e.key === 'End' ? 'terminal' : views[(views.indexOf(view) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
             setTab(target); document.getElementById(`tab-${target}`)?.focus();
           }
-        }} onClick={() => setTab(view)}>{view === 'sql' ? 'SQL editor' : view === 'visual' ? 'Visual' : 'Terminal'}</button>)}<span className="read-only">Read-only dataset</span></div>
+        }} onClick={() => setTab(view)}>{view === 'sql' ? 'SQL editor' : view === 'visual' ? 'Visual' : 'Terminal'}</button>)}<span className="read-only">{lesson.module === 4 ? 'Statement practice' : 'Read-only dataset'}</span></div>
         <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === 'sql' && <><div className="editor-resizable" style={{ height: tabHeight }}><SqlEditor value={sql} onChange={setSql} onRun={() => void execute(sql)} dark={dark}/></div><label className="resize-control">Editor height<input aria-label="Editor height" type="range" min="200" max="650" step="25" value={tabHeight} onChange={e => setTabHeight(Number(e.target.value))}/></label>
             <div className="query-toolbar"><button className="primary" disabled={busy || !ready} onClick={() => void execute(sql)}><Play size={15}/>{busy ? 'Running…' : 'Run Query'}</button><span className="shortcut">Ctrl / ⌘ + Enter</span><button disabled={busy} onClick={reset}><RotateCcw size={15}/>Reset query</button><button onClick={() => void copy()}><Copy size={15}/>Copy SQL</button></div></>}

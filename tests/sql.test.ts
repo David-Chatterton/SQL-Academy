@@ -3,7 +3,7 @@ import { assertReadOnly, hasTechnique, tokens } from '../src/engine/sql';
 import { lessons } from '../src/content/lessons';
 describe('Module 1 read-only workflow', () => {
   it('allows all reference solutions and alternative comparisons', () => {
-    for (const lesson of lessons) expect(() => assertReadOnly(lesson.solution)).not.toThrow();
+    for (const lesson of lessons) expect(() => assertReadOnly(lesson.solution, lesson.module === 4 ? 'cleaning' : 'finance')).not.toThrow();
     expect(() => assertReadOnly("select date, payee, amount from transactions where amount between -100 and -50;")).not.toThrow();
     expect(() => assertReadOnly("SELECT * FROM transactions WHERE (amount < -30); -- UPDATE data")).not.toThrow();
   });
