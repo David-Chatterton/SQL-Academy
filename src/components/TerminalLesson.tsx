@@ -27,8 +27,8 @@ export function TerminalLesson({ lesson, execute, disabled }: Props) {
         : input === '.mode table' ? 'Simulation displays results as a table in the grid below.' : 'This dot command is not simulated. Use .help.';
       setHistory(h => [...h, response]); return;
     }
-    if (!pending && /^(sudo|pacman|duckdb|python|ls|cd|curl|wget)\b/.test(input)) {
-      setHistory(h => [...h, 'That is a real shell command. Run it in your own CachyOS terminal using the instructions below.']); return;
+    if (!pending && /^(sudo|duckdb|python3?|node|npm|npx|pip3?|uv|brew|winget|choco|apt(-get)?|dnf|yum|pacman|zypper|ls|dir|cd|curl|wget)\b/i.test(input)) {
+      setHistory(h => [...h, 'That is a shell command. Run it in your computer’s terminal using the instructions below.']); return;
     }
     const sql = `${pending}${pending ? '\n' : ''}${input}`;
     if (!sql.endsWith(';')) { setPending(sql); setHistory(h => [...h, 'Statement buffered. Finish it with a semicolon to run.']); return; }
@@ -42,22 +42,33 @@ export function TerminalLesson({ lesson, execute, disabled }: Props) {
       <form onSubmit={e => void submit(e)}><label htmlFor="terminal-command">{pending ? '...>' : 'D>'}</label><input id="terminal-command" aria-label="Simulated terminal command" autoComplete="off" spellCheck={false} value={command} onChange={e => setCommand(e.target.value)} disabled={disabled}/><button disabled={disabled || !command.trim()}>Enter</button></form>
     </div>
     {pending && <button onClick={() => { setPending(''); setHistory(h => [...h, 'Buffered statement discarded.']); }}>Discard buffered statement</button>}
-    {lesson.module === 4 ? <details className="native-instructions" open><summary>Practise Module 4 in your own terminal</summary>
-      <p>Download statement.csv, statement.parquet and cleaning-setup.sql from the practice box on this page. Keep them in the same directory. The setup recreates the matching raw table, prepared view and Parquet extract from the CSV.</p>
-      <pre>cd ~/Downloads{'\n'}duckdb cleaning.duckdb{'\n'}.read cleaning-setup.sql{'\n'}.tables{'\n'}.schema raw_statement{'\n'}.mode table</pre>
-      <p>Use a fresh database. Run the setup once; it deliberately fails if raw_statement already exists. Queries in the browser accept SELECT only and can read only the supplied files.</p>
-      <details><summary>Reveal native setup SQL</summary><pre className="sql-block"><code>{cleaningNativeSetup()}</code></pre></details>
-      <p>Now run your lesson’s query, or reveal the complete answer below. These instructions do not execute commands on your computer.</p>
-    </details> : <details className="native-instructions" open><summary>Run this on your own CachyOS terminal</summary>
-      <p>These commands are instructions for your real computer. This app does not install software or execute shell commands.</p>
-      <ol>
-        <li>Check availability, then install using your normal CachyOS package workflow:<pre>pacman -Si duckdb{'\n'}sudo pacman -Syu duckdb{'\n'}duckdb --version</pre><p>The official Arch Extra repository and CachyOS package index list DuckDB. Verify the package on your system first. If it is unavailable, follow the <a href="https://duckdb.org/docs/stable/installation/" target="_blank" rel="noreferrer">official DuckDB installation guide</a> for a Linux CLI binary. Do not run an unreviewed downloaded script.</p></li>
-        <li>Download the seed and move to its directory:<button onClick={downloadSeed}>Download matching training.sql</button><pre>cd ~/Downloads{'\n'}duckdb academy.duckdb &lt; training.sql</pre><p>Use a fresh filename. The seed deliberately fails if its tables already exist, protecting an existing database.</p></li>
-        <li>Open the training database and explore:<pre>duckdb academy.duckdb{'\n'}.tables{'\n'}.schema transactions{'\n'}.mode table{'\n'}SELECT * FROM transactions LIMIT 5;</pre><p><code>duckdb academy.duckdb</code> runs in your shell; the dot commands and SELECT run inside DuckDB. Exit with <code>.quit</code>.</p></li>
-        <li>Try this lesson’s query. Use the SQL tab to write it, or reveal the solution when you need it. CLI and browser data are generated from the same seed.</li>
-        <li>Export a small CSV, then import it into a separate practice table:<pre>{"COPY (SELECT date, payee, amount FROM transactions LIMIT 100)\nTO 'sample.csv' (HEADER, DELIMITER ',');\nCREATE TABLE imported_sample AS\nSELECT * FROM read_csv('sample.csv', header = true);\nSELECT * FROM imported_sample LIMIT 5;"}</pre><p>These write-enabled commands belong in your native training database. The browser editor accepts SELECT only.</p></li>
-      </ol>
-      <p>Sources: <a href="https://archlinux.org/packages/extra/x86_64/duckdb/">Arch package</a>, <a href="https://packages.cachyos.org/package/extra/x86_64/duckdb">CachyOS package</a>, <a href="https://duckdb.org/docs/stable/clients/cli/overview">DuckDB CLI documentation</a>. Availability checked 11 October 2026; local repositories can differ.</p>
-    </details>}
+    <details className="native-instructions" open><summary>Run DuckDB in your own terminal</summary>
+      <h4>Install the DuckDB command-line client</h4>
+      <p>Open the <a href="https://duckdb.org/docs/stable/installation/" target="_blank" rel="noreferrer">official DuckDB installation guide</a>, choose the <strong>Command line</strong> client and your operating system, then follow the instructions there.</p>
+      <p>Check your installed version in your computer’s terminal and compare it with the releases on that page. Package-manager versions can differ.</p>
+      <pre>duckdb --version</pre>
+      {lesson.module === 4 ? <>
+        <h4>Prepare the Module 4 practice database</h4>
+        <p>Download statement.csv, statement.parquet and cleaning-setup.sql from the practice box on this page. Save them in one folder, then open a terminal in that folder using your file manager or the cd command with your own folder path.</p>
+        <p>Start DuckDB with a fresh database filename:</p>
+        <pre>duckdb cleaning.duckdb</pre>
+        <p>At the DuckDB prompt, load the setup and explore:</p>
+        <pre>.read cleaning-setup.sql{'\n'}.tables{'\n'}.schema raw_statement{'\n'}.mode table</pre>
+        <p>Run the setup once; it deliberately fails if raw_statement already exists. It recreates the matching raw table, prepared view and Parquet extract from the CSV.</p>
+        <details><summary>Reveal native setup SQL</summary><pre className="sql-block"><code>{cleaningNativeSetup()}</code></pre></details>
+        <p>Now run your lesson’s query. Type <code>.quit</code> at the DuckDB prompt to exit.</p>
+      </> : <>
+        <h4>Prepare the practice database</h4>
+        <ol>
+          <li>Download the matching data:<button onClick={downloadSeed}>Download matching training.sql</button><p>Save it in a folder, then open a terminal in that folder using your file manager or the cd command with your own folder path.</p></li>
+          <li>Start DuckDB with a fresh database filename:<pre>duckdb academy.duckdb</pre></li>
+          <li>At the DuckDB prompt, load the script and explore:<pre>.read training.sql{'\n'}.tables{'\n'}.schema transactions{'\n'}.mode table{'\n'}SELECT * FROM transactions LIMIT 5;</pre><p>Run the setup once. The script deliberately fails if its tables already exist. Type <code>.quit</code> to exit DuckDB.</p></li>
+          <li>Try this lesson’s query. Use the SQL tab to write it, or reveal the solution when you need it. The browser and downloaded seed use the same data.</li>
+        </ol>
+        <details><summary>Optional: practise CSV export and import</summary><pre>{"COPY (SELECT date, payee, amount FROM transactions LIMIT 100)\nTO 'sample.csv' (HEADER, DELIMITER ',');\nCREATE TABLE imported_sample AS\nSELECT * FROM read_csv('sample.csv', header = true);\nSELECT * FROM imported_sample LIMIT 5;"}</pre><p>Run these SQL statements in your local practice database. The browser editor accepts SELECT only.</p></details>
+      </>}
+      <p><code>duckdb --version</code> and <code>duckdb {lesson.module === 4 ? 'cleaning.duckdb' : 'academy.duckdb'}</code> run in your computer’s terminal. Dot commands and SQL run at the DuckDB prompt. This browser tab is a simulation and does not install software or execute commands on your computer.</p>
+      <p>Reference: <a href="https://duckdb.org/docs/stable/clients/cli/overview" target="_blank" rel="noreferrer">DuckDB CLI documentation</a>.</p>
+    </details>
   </div>;
 }

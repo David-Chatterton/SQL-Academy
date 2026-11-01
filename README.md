@@ -38,7 +38,7 @@ npm run preview
 - SELECT-only workflow, external access disabled, configuration locked and learner transactions rolled back.
 - Monaco SQL editor, plain-text accessible alternative, Run Query, Ctrl/Command+Enter, copy and reset controls, paginated results with column types.
 - Interactive teaching samples for column selection, row filtering, ranges, AND/OR, sorting and unique values. Samples are explicitly distinguished from actual query results.
-- Guided terminal simulation plus native CachyOS instructions and an identical downloadable SQL seed.
+- Guided terminal simulation plus platform-neutral CLI instructions and an identical downloadable SQL seed.
 - Independent learning progress storage, dashboard, monthly spending chart with an accessible table, draggable schema diagram, responsive navigation and system/light/dark themes.
 
 See verification status below for checks completed and the remaining browser verification.
@@ -65,11 +65,21 @@ Download `training.sql` using the app's SQL seed control, or generate it:
 
 ```sh
 npm run seed
-duckdb academy.duckdb < training.sql
+```
+
+Open a terminal in the folder containing `training.sql`, then start DuckDB:
+
+```sh
 duckdb academy.duckdb
 ```
 
-Use a fresh database. The seed is wrapped in a transaction and intentionally does not drop existing tables. Browser and CLI use the same schema and generator, rather than two independent datasets. Check `pacman -Si duckdb` on CachyOS before installing; the app links official package and installation documentation. The simulated terminal runs SQL in browser DuckDB and never executes host shell commands.
+At the DuckDB prompt, load the script:
+
+```text
+.read training.sql
+```
+
+Use a fresh database. The seed is wrapped in a transaction and intentionally does not drop existing tables. Browser and CLI use the same schema and generator, rather than two independent datasets. Install the Command line client using the [official DuckDB installation guide](https://duckdb.org/docs/stable/installation/) for your operating system. Check `duckdb --version` against the releases shown there; package-manager versions can differ. In your terminal, open the folder containing training.sql before starting DuckDB, then run `.read training.sql` at the DuckDB prompt. The simulated terminal runs SQL in browser DuckDB and never executes host shell commands.
 
 ## Add lessons
 

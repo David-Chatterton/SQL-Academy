@@ -67,6 +67,9 @@ test('hints, solution, terminal, seed download and scoped progress reset work', 
   await page.getByRole('button', { name: 'Reveal solution', exact: true }).click();
   await expect(page.getByText('0 of 32 lessons completed', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Terminal', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Simulated terminal command' }).fill('npm --version');
+  await page.getByRole('button', { name: 'Enter', exact: true }).click();
+  await expect(page.locator('.terminal-screen')).toContainText('That is a shell command.');
   await page.getByRole('textbox', { name: 'Simulated terminal command' }).fill('.tables');
   await page.getByRole('button', { name: 'Enter', exact: true }).click();
   await expect(page.locator('.terminal-screen')).toContainText('accounts  budgets  categories  payees  transactions');
