@@ -106,5 +106,5 @@ export function seedStatements(seed = SEED): string[] {
   return statements;
 }
 export function nativeSeedSQL(): string {
-  return `-- DuckDB Academy v0.1; seed ${SEED}; fictional data, 2024–2025.\n-- Negative = outflow, positive = inflow. Use an empty training database.\nBEGIN TRANSACTION;\n${seedStatements().join('\n')}\nCOMMIT;\n`;
+  return `-- SQL Academy v0.1; seed ${SEED}; fictional data, 2024–2025.\n-- Negative = outflow, positive = inflow. Use an empty training database.\nBEGIN TRANSACTION;\n${seedStatements().join('\n')}\nCOMMIT;\n`;
 }

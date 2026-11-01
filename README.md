@@ -1,4 +1,6 @@
-# DuckDB Academy v0.1
+# SQL Academy v0.1
+
+**Learn practical SQL with DuckDB.** An independent SQL learning project using fictional financial data. The course teaches transferable SQL concepts through DuckDB; some file-reading functions, syntax and tooling are specific to DuckDB.
 
 A local, browser-based SQL learning application for an Excel-experienced beginner. Modules 1–4 contain 32 lessons: SQL fundamentals, aggregation, relational joins, and importing/cleaning statement data. Modules 5–8 are a clearly labelled roadmap.
 
@@ -55,7 +57,7 @@ A fixed linear congruential random generator (seed `20260101`) produces exactly 
 
 Transactions retain payee/category text to let beginners query without joins. IDs prepare the curriculum for relational modelling. Controlled whitespace/case variants, duplicated business records (with different primary keys), missing categories and paired transfers prepare later cleaning lessons. The generated activity volume and anomalies are intentionally educational; this is not a model household's recommended spending.
 
-Database state is recreated deterministically on reload or Reset database. Progress is saved independently in `localStorage` under `duckdb-academy:progress:v1`. Reset learning progress changes only that key; it never clears unrelated storage or theme preferences. Completion means a successful checked query, including a revealed solution that the learner subsequently runs.
+Database state is recreated deterministically on reload or Reset database. The public name is SQL Academy; the existing storage keys are retained so earlier progress and theme preferences remain available. Progress is saved independently in `localStorage` under `duckdb-academy:progress:v1`. Reset learning progress changes only that key; it never clears unrelated storage or theme preferences. Completion means a successful checked query, including a revealed solution that the learner subsequently runs.
 
 ## Native CLI practice
 

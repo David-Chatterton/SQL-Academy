@@ -10,7 +10,7 @@ export function downloadSeed() {
 interface Props { lesson: Lesson; execute(sql: string): Promise<QueryResult | null>; disabled: boolean }
 export function TerminalLesson({ lesson, execute, disabled }: Props) {
   const [command, setCommand] = useState('');
-  const [history, setHistory] = useState<string[]>(['DuckDB Academy guided simulation. No commands run on your host operating system.', 'SQL is executed by the real browser DuckDB engine. Try .help or .tables.']);
+  const [history, setHistory] = useState<string[]>(['SQL Academy guided simulation. No commands run on your host operating system.', 'SQL is executed by the real browser DuckDB engine. Try .help or .tables.']);
   const [pending, setPending] = useState('');
   const submit = async (event: FormEvent) => {
     event.preventDefault();
