@@ -21,7 +21,7 @@ export default function App() {
   const lessonIndex = currentModule.lessons.findIndex(item => item.id === lesson.id);
   const [expandedModule, setExpandedModule] = useState<number | null>(lesson.module);
   const select = (id: string) => { learning.select(id); setExpandedModule(lessons.find(item => item.id === id)!.module); setView('lesson'); setMenu(false); };
-  return <div className="app-shell">
+  return <div className={`app-shell ${view === 'lesson' ? 'lesson-view' : ''}`}>
     <a href="#main" className="skip-link">Skip to lesson workspace</a>
     <aside className={`sidebar ${menu ? 'mobile-open' : ''}`} aria-label="Course navigation">
       <div className="brand"><div className="brand-icon"><Database size={23}/></div><div>DuckDB<span>ACADEMY</span></div><button className="mobile-close" aria-label="Close course navigation" onClick={() => setMenu(false)}><X/></button></div>

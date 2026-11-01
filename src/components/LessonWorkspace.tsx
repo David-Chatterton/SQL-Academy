@@ -24,6 +24,8 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
   const [copyStatus, setCopyStatus] = useState('');
   const [tabHeight, setTabHeight] = useState(320);
   const running = useRef(false);
+  const practicePanel = useRef<HTMLDivElement>(null);
+  const selectTab = (view: typeof tab) => { setTab(view); practicePanel.current?.scrollTo({ top: 0 }); };
   const execute = async (text: string): Promise<QueryResult | null> => {
     if (running.current || !ready) return null;
     running.current = true; setBusy(true); setError(''); setFeedback(null); setResult(null);
@@ -46,7 +48,7 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
   return <div className="lesson-workspace">
     <div className="lesson-top"><div><span className="eyebrow">MODULE {String(lesson.module).padStart(2, '0')} / LESSON {String(index + 1).padStart(2, '0')}</span><h1>{lesson.title}</h1></div><span className={`lesson-badge ${completed ? 'done' : ''}`}>{completed ? <><CheckCircle2 size={15}/>Completed</> : 'In progress'}</span></div>
     <div className="workspace-panels">
-      <article className="lesson-reading">
+      <article className="lesson-reading" aria-label="Lesson content" tabIndex={0}>
         {lesson.module === 4 && <CleaningFiles ready={ready} downloadFile={downloadFile}/>}
         <section><span className="eyebrow">LEARNING OBJECTIVES</span><ul className="objectives">{lesson.objectives.map(o => <li key={o}>{o}</li>)}</ul></section>
         <section className="lesson-explanation"><span className="eyebrow">UNDERSTAND</span>{lesson.explanation.map(p => <p key={p}>{p}</p>)}</section>
@@ -54,15 +56,26 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
         <section className="task-card"><span className="eyebrow">YOUR TASK</span><p>{lesson.task}</p><small>{lesson.completionCriteria}</small></section>
         <section><h3>Read the syntax</h3><button aria-expanded={syntaxVisible} aria-controls="lesson-syntax" onClick={() => setSyntaxVisible(visible => !visible)}><Eye size={16}/>{syntaxVisible ? 'Hide the syntax' : 'Reveal the syntax'}</button><div id="lesson-syntax" hidden={!syntaxVisible}>{syntaxVisible && <dl className="syntax-list">{lesson.syntax.map(s => <div key={s.clause}><dt><code>{s.clause}</code></dt><dd>{s.meaning}</dd></div>)}</dl>}</div></section>
         {lesson.prerequisites.length > 0 && <p className="muted">Recommended preparation: {prerequisiteLabel}. You can revisit any lesson at any time.</p>}
+        <section className="solution" aria-labelledby="final-help-heading">
+          <h3 id="final-help-heading">Final help: the complete answer</h3>
+          <p>Need the full query? Reveal the reference solution when you are ready.</p>
+          <button aria-expanded={solution} aria-controls="complete-answer" onClick={() => setSolution(visible => !visible)}><Eye size={16}/>{solution ? 'Hide solution' : 'Reveal solution'}</button>
+          <div id="complete-answer" hidden={!solution}>{solution && <>
+            <pre className="sql-block"><code>{lesson.solution}</code></pre>
+            <p>{lesson.solutionWhy}</p>
+            <button disabled={busy} onClick={() => { setSql(lesson.solution); selectTab('sql'); document.getElementById('tab-sql')?.focus(); }}>Load solution into editor</button>
+            <p className="muted">Revealing or loading a solution does not complete the lesson. Run it to check the actual result.</p>
+          </>}</div>
+        </section>
       </article>
-      <div className="practice-panel">
+      <div className="practice-panel" ref={practicePanel} role="region" aria-label="Practice workspace" tabIndex={0}>
         <div className="tabs" role="tablist" aria-label="Lesson view">{(['visual', 'sql', 'terminal'] as const).map(view => <button key={view} id={`tab-${view}`} role="tab" aria-selected={tab === view} aria-controls={`panel-${view}`} tabIndex={tab === view ? 0 : -1} onKeyDown={e => {
           const views = ['visual', 'sql', 'terminal'] as const;
           if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End') {
             e.preventDefault(); const target = e.key === 'Home' ? 'visual' : e.key === 'End' ? 'terminal' : views[(views.indexOf(view) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
-            setTab(target); document.getElementById(`tab-${target}`)?.focus();
+            selectTab(target); document.getElementById(`tab-${target}`)?.focus();
           }
-        }} onClick={() => setTab(view)}>{view === 'sql' ? 'SQL editor' : view === 'visual' ? 'Visual' : 'Terminal'}</button>)}<span className="read-only">{lesson.module === 4 ? 'Statement practice' : 'Read-only dataset'}</span></div>
+        }} onClick={() => selectTab(view)}>{view === 'sql' ? 'SQL editor' : view === 'visual' ? 'Visual' : 'Terminal'}</button>)}<span className="read-only">{lesson.module === 4 ? 'Statement practice' : 'Read-only dataset'}</span></div>
         <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === 'sql' && <><div className="editor-resizable" style={{ height: tabHeight }}><SqlEditor value={sql} onChange={setSql} onRun={() => void execute(sql)} dark={dark}/></div><label className="resize-control">Editor height<input aria-label="Editor height" type="range" min="200" max="650" step="25" value={tabHeight} onChange={e => setTabHeight(Number(e.target.value))}/></label>
             <div className="query-toolbar"><button className="primary" disabled={busy || !ready} onClick={() => void execute(sql)}><Play size={15}/>{busy ? 'Running…' : 'Run Query'}</button><span className="shortcut">Ctrl / ⌘ + Enter</span><button disabled={busy} onClick={reset}><RotateCcw size={15}/>Reset query</button><button onClick={() => void copy()}><Copy size={15}/>Copy SQL</button></div></>}
@@ -79,16 +92,5 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
         {completed && !hasNext && <div className="next-lesson"><span>You have completed the final available challenge. Review your dashboard to see overall progress.</span><button className="primary" onClick={next}>View dashboard<ArrowRight size={16}/></button></div>}
       </div>
     </div>
-    <section className="solution" aria-labelledby="final-help-heading">
-      <h3 id="final-help-heading">Final help: the complete answer</h3>
-      <p>Need the full query? Reveal the reference solution when you are ready.</p>
-      <button aria-expanded={solution} aria-controls="complete-answer" onClick={() => setSolution(visible => !visible)}><Eye size={16}/>{solution ? 'Hide solution' : 'Reveal solution'}</button>
-      <div id="complete-answer" hidden={!solution}>{solution && <>
-        <pre className="sql-block"><code>{lesson.solution}</code></pre>
-        <p>{lesson.solutionWhy}</p>
-        <button disabled={busy} onClick={() => { setSql(lesson.solution); setTab('sql'); }}>Load solution into editor</button>
-        <p className="muted">Revealing or loading a solution does not complete the lesson. Run it to check the actual result.</p>
-      </>}</div>
-    </section>
   </div>;
 }

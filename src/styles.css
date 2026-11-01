@@ -1691,3 +1691,72 @@ footer button {
   cursor:pointer;
   padding:8px 0
 }
+
+/* Use independently scrolling panes only when both dimensions leave useful workspace. */
+@media (min-width:1191px) and (min-height:760px) {
+  .lesson-view .main-shell {
+    height:100dvh;
+    min-height:0;
+    overflow:hidden
+  }
+
+  .lesson-view .app-header,.lesson-view .utility-bar,.lesson-view footer {
+    flex-shrink:0
+  }
+
+  .lesson-view main {
+    display:flex;
+    min-height:0
+  }
+
+  .lesson-view .lesson-workspace {
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    min-height:0;
+    margin:0 auto
+  }
+
+  .lesson-view .lesson-top {
+    flex-shrink:0
+  }
+
+  .lesson-view .workspace-panels {
+    flex:1;
+    min-height:0;
+    grid-template-rows:minmax(0,1fr);
+    align-items:stretch
+  }
+
+  .lesson-view .lesson-reading,.lesson-view .practice-panel {
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-gutter:stable
+  }
+
+  .lesson-view .lesson-reading {
+    padding-right:14px;
+    scroll-padding-block:16px
+  }
+
+  .lesson-view .practice-panel {
+    scroll-padding-top:60px
+  }
+
+  .lesson-view .practice-panel>.tabs {
+    position:sticky;
+    top:0;
+    z-index:5
+  }
+}
+
+.lesson-reading .solution {
+  grid-column:1/-1;
+  margin:20px 0 0
+}
+
+.lesson-reading:focus-visible,.practice-panel:focus-visible {
+  outline:3px solid var(--accent);
+  outline-offset:-3px
+}
