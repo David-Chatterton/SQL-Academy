@@ -91,3 +91,9 @@ The simulated terminal never executes host shell commands. Native-seed parity is
 Module 4 uses a separate disposable database with a fixed 12-row statement fixture. Read the real CSV and Parquet files, inspect parsing failures, standardise text, review rejected rows, deduplicate business records and build a clean spending report. Its practice box downloads the matching CSV, Parquet and native setup SQL. Query and database resets preserve course progress. Switching to earlier modules recreates their original financial database.
 
 Parquet support uses the signed local extension assets in `public/duckdb-extensions`; these match DuckDB v1.4.3 in the installed WASM package. Keep both variants aligned with future engine upgrades. Learner queries can read only the supplied fixture files; arbitrary uploads, remote reads and persistent SQL writes are not enabled.
+
+## Explore in DBeaver
+
+The lesson practice pane includes a DBeaver guide alongside Visual, SQL editor and Terminal. It gives a standalone GUI workflow: create a DuckDB connection, download the practice data, run the setup script, then browse tables and write queries. No command-line setup is required. The guide links official setup and execution documentation. Browser and desktop copies are independent; run a task in the browser to record course completion.
+
+For Module 4, download the statement fixtures from the practice box. The DBeaver guide supplies a separate `dbeaver-cleaning-setup.sql` download: edit its CSV placeholder to an absolute local path, then execute the whole script in a fresh `cleaning.duckdb` connection. It creates the raw table and prepared view without overwriting the downloaded Parquet extract. Direct CSV/Parquet lesson queries in DBeaver need local absolute paths.

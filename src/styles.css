@@ -1760,3 +1760,50 @@ footer button {
   outline:3px solid var(--accent);
   outline-offset:-3px
 }
+
+.dbeaver-lesson {
+  padding:20px;
+  font-size:12px;
+  line-height:1.8;
+  overflow-wrap:anywhere
+}
+
+.dbeaver-steps {
+  list-style:decimal;
+  padding-left:22px
+}
+
+.dbeaver-steps>li {
+  padding-left:4px;
+  margin-bottom:24px
+}
+
+.dbeaver-steps h4 {
+  font-size:13px;
+  font-weight:600;
+  margin:12px 0 8px
+}
+
+.dbeaver-lesson summary {
+  cursor:pointer;
+  padding:8px 0;
+  font-weight:600
+}
+
+.dbeaver-troubleshooting li {
+  margin:8px 0
+}
+
+@media(max-width:760px) {
+  .tabs .read-only {
+    display:none
+  }
+
+  .tabs button {
+    padding-inline:8px
+  }
+
+  .dbeaver-lesson {
+    padding:15px
+  }
+}

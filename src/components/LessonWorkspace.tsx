@@ -7,13 +7,16 @@ import { ResultsGrid } from './ResultsGrid';
 import { VisualLesson } from './VisualLesson';
 import { TerminalLesson } from './TerminalLesson';
 import { CleaningFiles } from './CleaningFiles';
+import { DBeaverLesson } from './DBeaverLesson';
+const lessonViews = ['visual', 'sql', 'terminal', 'dbeaver'] as const;
+const viewLabels = { visual: 'Visual', sql: 'SQL editor', terminal: 'Terminal', dbeaver: 'DBeaver' };
 interface Props {
   lesson: Lesson; index: number; hasNext: boolean; prerequisiteLabel: string; dark: boolean; ready: boolean; completed: boolean;
   downloadFile(name: 'statement.csv' | 'statement.parquet'): Promise<Uint8Array>;
   query(sql: string): Promise<QueryResult>; complete(): void; retry(): void; next(): void;
 }
 export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dark, ready, completed, downloadFile, query, complete, retry, next }: Props) {
-  const [tab, setTab] = useState<'sql' | 'visual' | 'terminal'>('sql');
+  const [tab, setTab] = useState<typeof lessonViews[number]>('sql');
   const [sql, setSql] = useState(lesson.starter);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -69,18 +72,19 @@ export function LessonWorkspace({ lesson, index, hasNext, prerequisiteLabel, dar
         </section>
       </article>
       <div className="practice-panel" ref={practicePanel} role="region" aria-label="Practice workspace" tabIndex={0}>
-        <div className="tabs" role="tablist" aria-label="Lesson view">{(['visual', 'sql', 'terminal'] as const).map(view => <button key={view} id={`tab-${view}`} role="tab" aria-selected={tab === view} aria-controls={`panel-${view}`} tabIndex={tab === view ? 0 : -1} onKeyDown={e => {
-          const views = ['visual', 'sql', 'terminal'] as const;
+        <div className="tabs" role="tablist" aria-label="Lesson view">{lessonViews.map(view => <button key={view} id={`tab-${view}`} role="tab" aria-selected={tab === view} aria-controls={`panel-${view}`} tabIndex={tab === view ? 0 : -1} onKeyDown={e => {
+          const views = lessonViews;
           if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End') {
-            e.preventDefault(); const target = e.key === 'Home' ? 'visual' : e.key === 'End' ? 'terminal' : views[(views.indexOf(view) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
+            e.preventDefault(); const target = e.key === 'Home' ? 'visual' : e.key === 'End' ? views[views.length - 1] : views[(views.indexOf(view) + (e.key === 'ArrowRight' ? 1 : views.length - 1)) % views.length];
             selectTab(target); document.getElementById(`tab-${target}`)?.focus();
           }
-        }} onClick={() => selectTab(view)}>{view === 'sql' ? 'SQL editor' : view === 'visual' ? 'Visual' : 'Terminal'}</button>)}<span className="read-only">{lesson.module === 4 ? 'Statement practice' : 'Read-only dataset'}</span></div>
+        }} onClick={() => selectTab(view)}>{viewLabels[view]}</button>)}<span className="read-only">{lesson.module === 4 ? 'Statement practice' : 'Read-only dataset'}</span></div>
         <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
           {tab === 'sql' && <><div className="editor-resizable" style={{ height: tabHeight }}><SqlEditor value={sql} onChange={setSql} onRun={() => void execute(sql)} dark={dark}/></div><label className="resize-control">Editor height<input aria-label="Editor height" type="range" min="200" max="650" step="25" value={tabHeight} onChange={e => setTabHeight(Number(e.target.value))}/></label>
             <div className="query-toolbar"><button className="primary" disabled={busy || !ready} onClick={() => void execute(sql)}><Play size={15}/>{busy ? 'Running…' : 'Run Query'}</button><span className="shortcut">Ctrl / ⌘ + Enter</span><button disabled={busy} onClick={reset}><RotateCcw size={15}/>Reset query</button><button onClick={() => void copy()}><Copy size={15}/>Copy SQL</button></div></>}
           {tab === 'visual' && <VisualLesson lesson={lesson} disabled={busy || !ready} onRun={text => { setSql(text); void execute(text); }}/>} 
           {tab === 'terminal' && <TerminalLesson lesson={lesson} execute={execute} disabled={busy || !ready}/>}
+          {tab === 'dbeaver' && <DBeaverLesson lesson={lesson}/>}
         </div>
         <div className="assistance"><button disabled={hint >= lesson.hints.length} onClick={() => setHint(h => h + 1)}><Lightbulb size={16}/>Show hint {Math.min(hint + 1, lesson.hints.length)} / {lesson.hints.length}</button><button disabled={busy} onClick={() => { retry(); reset(); }}>Retry lesson</button></div>
         {hint > 0 && <div className="hints"><strong>Progressive hints</strong><ol>{lesson.hints.slice(0, hint).map(h => <li key={h}>{h}</li>)}</ol></div>}
